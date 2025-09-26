@@ -1,9 +1,21 @@
-FROM openjdk:17
-
-COPY . /app
-
+# ---- Etapa de build (compila el JAR) ----
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-RUN ./mvnw  clean install -DskipTests
+# Copiamos pom primero para cachear dependencias
+COPY pom.xml .
+RUN mvn -B -q -DskipTests dependency:go-offline
 
-CMD ["java", "-jar", "Proyecto1-0.0.1-SNAPSHOT.jar"]
+# Copiamos el código y construimos
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+# ---- Etapa de runtime (solo JRE) ----
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# Copiamos el JAR construido (toma el único jar en target)
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]
