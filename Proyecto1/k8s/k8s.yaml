@@ -1,1 +1,77 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: press
 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proyecto1
+  namespace: press
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proyecto1
+  template:
+    metadata:
+      labels:
+        app: proyecto1
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: proyecto1
+          image: ghcr.io/juuantellez1/proyecto1:latest
+          ports:
+            - containerPort: 8080   # Spring Boot por defecto
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proyecto1
+  namespace: press
+spec:
+  selector:
+    app: proyecto1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: proyecto1
+  namespace: press
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: public
+  rules:
+    - host: 10.43.103.200.nip.io   # <-- si no abre, cambia por LA IP REAL DE TU VM, p.ej. 192.168.x.x.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proyecto1
+                port:
+                  number: 80
