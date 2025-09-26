@@ -19,23 +19,18 @@ spec:
       labels:
         app: proyecto1
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
         - name: proyecto1
-          image: ghcr.io/juuantellez1/proyecto1:latest
+          image: localhost:32000/proyecto1:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8080   # Spring Boot por defecto
+            - containerPort: 8080
           readinessProbe:
-            httpGet:
-              path: /
-              port: 8080
+            httpGet: { path: "/", port: 8080 }
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /
-              port: 8080
+            httpGet: { path: "/", port: 8080 }
             initialDelaySeconds: 30
             periodSeconds: 20
 
@@ -65,7 +60,7 @@ metadata:
 spec:
   ingressClassName: public
   rules:
-    - host: 10.43.103.200.nip.io   # <-- si no abre, cambia por LA IP REAL DE TU VM, p.ej. 192.168.x.x.nip.io
+    - host: 10.43.103.200.nip.io
       http:
         paths:
           - path: /
