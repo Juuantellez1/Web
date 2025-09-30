@@ -20,7 +20,7 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
 
-    //esto es una prueba
+    private final UsuarioService usuarioService;
 
     public List<EmpresaDto> listar() {
         return empresaRepository.findAll().stream().map(this::toDto).toList();
