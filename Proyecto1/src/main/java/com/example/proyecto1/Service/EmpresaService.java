@@ -20,8 +20,6 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
 
-    private final UsuarioService usuarioService;
-
     public List<EmpresaDto> listar() {
         return empresaRepository.findAll().stream().map(this::toDto).toList();
     }
