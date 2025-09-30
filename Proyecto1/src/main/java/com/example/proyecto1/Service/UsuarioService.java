@@ -1,11 +1,15 @@
+
 package com.example.proyecto1.Service;
 
+import com.example.proyecto1.Dto.LoginDto;
+import com.example.proyecto1.Dto.LoginResponseDto;
 import com.example.proyecto1.Dto.UsuarioDto;
 import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,6 +23,7 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public List<UsuarioDto> listar() {
         return usuarioRepository.findAll().stream().map(this::toDto).toList();
@@ -35,6 +40,9 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya está registrado");
         }
         Usuario usuario = toEntity(dto);
+
+        usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         Timestamp ahora = Timestamp.from(Instant.now());
         usuario.setFecha_registro(ahora);
         usuario.setFecha_modificacion(ahora);
@@ -43,6 +51,40 @@ public class UsuarioService {
         }
         Usuario guardado = usuarioRepository.save(usuario);
         return toDto(guardado);
+    }
+
+    public LoginResponseDto login(LoginDto loginDto) {
+        Usuario usuario = usuarioRepository.findByCorreo(loginDto.getCorreo())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Credenciales inválidas"
+                ));
+
+        if (!usuario.getActivo()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Usuario inactivo"
+            );
+        }
+
+        if (!passwordEncoder.matches(loginDto.getPassword(), usuario.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Credenciales inválidas"
+            );
+        }
+
+        usuario.setUltimo_login(Timestamp.from(Instant.now()));
+        usuarioRepository.save(usuario);
+
+        return LoginResponseDto.builder()
+                .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .apellido(usuario.getApellido())
+                .correo(usuario.getCorreo())
+                .mensaje("Login exitoso")
+                .exitoso(true)
+                .build();
     }
 
     public UsuarioDto actualizar(Long id, UsuarioDto dto) {
@@ -57,7 +99,11 @@ public class UsuarioService {
         existente.setNombre(dto.getNombre());
         existente.setApellido(dto.getApellido());
         existente.setCorreo(dto.getCorreo());
-        existente.setPassword(dto.getPassword());
+
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            existente.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
         existente.setActivo(dto.getActivo());
         existente.setUltimo_login(dto.getUltimo_login());
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
