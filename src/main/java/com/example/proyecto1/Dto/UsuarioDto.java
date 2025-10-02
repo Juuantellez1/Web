@@ -1,7 +1,9 @@
 package com.example.proyecto1.Dto;
 
+import com.example.proyecto1.Model.Rol;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +19,9 @@ import java.sql.Timestamp;
 public class UsuarioDto {
     private Long id;
 
+    @NotNull(message = "El ID de empresa es obligatorio")
+    private Long empresaId;
+
     @NotBlank(message = "El nombre es obligatorio")
     private String nombre;
 
@@ -28,8 +33,10 @@ public class UsuarioDto {
     private String correo;
 
     @Size(min = 6, max = 100, message = "El password debe tener entre 6 y 100 caracteres")
-    @NotBlank(message = "El password es obligatorio")
-    private String password;
+    private String password; // No obligatorio en actualizaciones
+
+    @NotNull(message = "El rol es obligatorio")
+    private Rol rol;
 
     private Boolean activo;
 

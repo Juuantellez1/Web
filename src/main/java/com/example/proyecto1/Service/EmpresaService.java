@@ -1,11 +1,18 @@
 package com.example.proyecto1.Service;
 
+import com.example.proyecto1.Dto.CrearEmpresaRequestDto;
+import com.example.proyecto1.Dto.CrearEmpresaResponseDto;
 import com.example.proyecto1.Dto.EmpresaDto;
+import com.example.proyecto1.Dto.UsuarioDto;
 import com.example.proyecto1.Model.Empresa;
+import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.EmpresaRepository;
+import com.example.proyecto1.Repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,6 +26,8 @@ import java.util.List;
 public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public List<EmpresaDto> listar() {
         return empresaRepository.findAll().stream().map(this::toDto).toList();
@@ -30,21 +39,44 @@ public class EmpresaService {
         return toDto(empresa);
     }
 
-    public EmpresaDto crear(EmpresaDto dto) {
-        if (empresaRepository.existsByNit(dto.getNit())) {
+    public CrearEmpresaResponseDto crearConAdmin(CrearEmpresaRequestDto request) {
+        if (empresaRepository.existsByNit(request.getNit())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El NIT ya está registrado");
         }
-        if (empresaRepository.existsByCorreo(dto.getCorreo())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya está registrado");
+        if (empresaRepository.existsByCorreo(request.getCorreoEmpresa())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo de la empresa ya está registrado");
         }
 
-        Empresa empresa = toEntity(dto);
+        Empresa empresa = new Empresa();
+        empresa.setNombre(request.getNombreEmpresa());
+        empresa.setNit(request.getNit());
+        empresa.setCorreo(request.getCorreoEmpresa());
+        empresa.setActivo(true);
+
         Timestamp ahora = Timestamp.from(Instant.now());
         empresa.setFecha_registro(ahora);
         empresa.setFecha_modificacion(ahora);
 
-        Empresa guardada = empresaRepository.save(empresa);
-        return toDto(guardada);
+        Empresa empresaGuardada = empresaRepository.save(empresa);
+
+        Usuario admin = new Usuario();
+        admin.setEmpresa(empresaGuardada);
+        admin.setNombre(request.getNombreAdmin());
+        admin.setApellido(request.getApellidoAdmin());
+        admin.setCorreo(request.getCorreoAdmin());
+        admin.setPassword(passwordEncoder.encode(request.getPasswordAdmin()));
+        admin.setRol(Rol.ADMIN);
+        admin.setActivo(true);
+        admin.setFecha_registro(ahora);
+        admin.setFecha_modificacion(ahora);
+
+        Usuario adminGuardado = usuarioRepository.save(admin);
+
+        return CrearEmpresaResponseDto.builder()
+                .empresa(toDto(empresaGuardada))
+                .usuarioAdmin(toUsuarioDto(adminGuardado))
+                .mensaje("Empresa y usuario administrador creados exitosamente")
+                .build();
     }
 
     public EmpresaDto actualizar(Long id, EmpresaDto dto) {
@@ -63,6 +95,11 @@ public class EmpresaService {
         existente.setNombre(dto.getNombre());
         existente.setNit(dto.getNit());
         existente.setCorreo(dto.getCorreo());
+
+        if (dto.getActivo() != null) {
+            existente.setActivo(dto.getActivo());
+        }
+
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Empresa actualizada = empresaRepository.save(existente);
@@ -82,19 +119,24 @@ public class EmpresaService {
                 .nombre(e.getNombre())
                 .nit(e.getNit())
                 .correo(e.getCorreo())
+                .activo(e.getActivo())
                 .fecha_registro(e.getFecha_registro())
                 .fecha_modificacion(e.getFecha_modificacion())
                 .build();
     }
 
-    private Empresa toEntity(EmpresaDto dto) {
-        Empresa e = new Empresa();
-        e.setId(dto.getId());
-        e.setNombre(dto.getNombre());
-        e.setNit(dto.getNit());
-        e.setCorreo(dto.getCorreo());
-        e.setFecha_registro(dto.getFecha_registro());
-        e.setFecha_modificacion(dto.getFecha_modificacion());
-        return e;
+    private UsuarioDto toUsuarioDto(Usuario u) {
+        return UsuarioDto.builder()
+                .id(u.getId())
+                .empresaId(u.getEmpresa().getId())
+                .nombre(u.getNombre())
+                .apellido(u.getApellido())
+                .correo(u.getCorreo())
+                .rol(u.getRol())
+                .activo(u.getActivo())
+                .ultimo_login(u.getUltimo_login())
+                .fecha_registro(u.getFecha_registro())
+                .fecha_modificacion(u.getFecha_modificacion())
+                .build();
     }
 }

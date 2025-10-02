@@ -1,5 +1,7 @@
 package com.example.proyecto1.Controller;
 
+import com.example.proyecto1.Dto.CrearEmpresaRequestDto;
+import com.example.proyecto1.Dto.CrearEmpresaResponseDto;
 import com.example.proyecto1.Dto.EmpresaDto;
 import com.example.proyecto1.Service.EmpresaService;
 import jakarta.validation.Valid;
@@ -29,9 +31,11 @@ public class EmpresaController {
     }
 
     @PostMapping
-    public ResponseEntity<EmpresaDto> crear(@Valid @RequestBody EmpresaDto dto) {
-        EmpresaDto creada = empresaService.crear(dto);
-        return ResponseEntity.created(URI.create("/api/empresas/" + creada.getId())).body(creada);
+    public ResponseEntity<CrearEmpresaResponseDto> crear(@Valid @RequestBody CrearEmpresaRequestDto request) {
+        CrearEmpresaResponseDto response = empresaService.crearConAdmin(request);
+        return ResponseEntity
+                .created(URI.create("/api/empresas/" + response.getEmpresa().getId()))
+                .body(response);
     }
 
     @PutMapping("/{id}")

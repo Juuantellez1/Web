@@ -13,33 +13,44 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @Setter
 @Getter
-@Table(name = "usuarios")
+@Table(
+        name = "usuarios",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"empresa_id", "correo"})
+)
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nombre")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "apellido")
+    @Column(name = "apellido", nullable = false)
     private String apellido;
 
-    @Column(name = "correo")
+    @Column(name = "correo", nullable = false)
     private String correo;
 
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "activo")
-    private Boolean activo;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol", nullable = false)
+    private Rol rol = Rol.LECTOR;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 
     @Column(name = "ultimo_login")
     private Timestamp ultimo_login;
 
-    @Column(name = "fecha_registro")
+    @Column(name = "fecha_registro", nullable = false)
     private Timestamp fecha_registro;
 
-    @Column(name = "fecha_modificacion")
+    @Column(name = "fecha_modificacion", nullable = false)
     private Timestamp fecha_modificacion;
 }

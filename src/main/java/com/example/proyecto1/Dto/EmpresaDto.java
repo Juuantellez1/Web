@@ -1,6 +1,5 @@
 package com.example.proyecto1.Dto;
 
-import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -12,8 +11,6 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Getter
-@Setter
 public class EmpresaDto {
     private Long id;
 
@@ -27,6 +24,8 @@ public class EmpresaDto {
     @Email(message = "El correo debe tener un formato válido")
     @NotBlank(message = "El correo es obligatorio")
     private String correo;
+
+    private Boolean activo;
 
     private Timestamp fecha_registro;
     private Timestamp fecha_modificacion;
