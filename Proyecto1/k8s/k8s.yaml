@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: proyecto1
-          image: localhost:32000/proyecto1:latest
+          image: localhost:32000/proyecto1:latest 
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
