@@ -1,9 +1,12 @@
+
 package com.example.proyecto1.Service;
 
 import com.example.proyecto1.Dto.CrearEmpresaRequestDto;
 import com.example.proyecto1.Dto.CrearEmpresaResponseDto;
 import com.example.proyecto1.Dto.EmpresaDto;
 import com.example.proyecto1.Dto.UsuarioDto;
+import com.example.proyecto1.Mapper.EmpresaMapper;
+import com.example.proyecto1.Mapper.UsuarioMapper;
 import com.example.proyecto1.Model.Empresa;
 import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
@@ -28,15 +31,17 @@ public class EmpresaService {
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmpresaMapper empresaMapper;
+    private final UsuarioMapper usuarioMapper;
 
     public List<EmpresaDto> listar() {
-        return empresaRepository.findAll().stream().map(this::toDto).toList();
+        return empresaMapper.toDtoList(empresaRepository.findAll());
     }
 
     public EmpresaDto obtenerPorId(Long id) {
         Empresa empresa = empresaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
-        return toDto(empresa);
+        return empresaMapper.toDto(empresa);
     }
 
     public CrearEmpresaResponseDto crearConAdmin(CrearEmpresaRequestDto request) {
@@ -73,8 +78,8 @@ public class EmpresaService {
         Usuario adminGuardado = usuarioRepository.save(admin);
 
         return CrearEmpresaResponseDto.builder()
-                .empresa(toDto(empresaGuardada))
-                .usuarioAdmin(toUsuarioDto(adminGuardado))
+                .empresa(empresaMapper.toDto(empresaGuardada))
+                .usuarioAdmin(usuarioMapper.toDto(adminGuardado))
                 .mensaje("Empresa y usuario administrador creados exitosamente")
                 .build();
     }
@@ -87,23 +92,17 @@ public class EmpresaService {
                 && empresaRepository.existsByNit(dto.getNit())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El NIT ya está registrado por otra empresa");
         }
+
         if (dto.getCorreo() != null && !dto.getCorreo().equalsIgnoreCase(existente.getCorreo())
                 && empresaRepository.existsByCorreo(dto.getCorreo())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya está registrado por otra empresa");
         }
 
-        existente.setNombre(dto.getNombre());
-        existente.setNit(dto.getNit());
-        existente.setCorreo(dto.getCorreo());
-
-        if (dto.getActivo() != null) {
-            existente.setActivo(dto.getActivo());
-        }
-
+        empresaMapper.updateEntityFromDto(dto, existente);
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Empresa actualizada = empresaRepository.save(existente);
-        return toDto(actualizada);
+        return empresaMapper.toDto(actualizada);
     }
 
     public void eliminar(Long id) {
@@ -111,32 +110,5 @@ public class EmpresaService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada");
         }
         empresaRepository.deleteById(id);
-    }
-
-    private EmpresaDto toDto(Empresa e) {
-        return EmpresaDto.builder()
-                .id(e.getId())
-                .nombre(e.getNombre())
-                .nit(e.getNit())
-                .correo(e.getCorreo())
-                .activo(e.getActivo())
-                .fecha_registro(e.getFecha_registro())
-                .fecha_modificacion(e.getFecha_modificacion())
-                .build();
-    }
-
-    private UsuarioDto toUsuarioDto(Usuario u) {
-        return UsuarioDto.builder()
-                .id(u.getId())
-                .empresaId(u.getEmpresa().getId())
-                .nombre(u.getNombre())
-                .apellido(u.getApellido())
-                .correo(u.getCorreo())
-                .rolUsuario(u.getRol())
-                .activo(u.getActivo())
-                .ultimo_login(u.getUltimo_login())
-                .fecha_registro(u.getFecha_registro())
-                .fecha_modificacion(u.getFecha_modificacion())
-                .build();
     }
 }

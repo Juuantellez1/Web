@@ -3,6 +3,7 @@ package com.example.proyecto1.Service;
 import com.example.proyecto1.Dto.LoginDto;
 import com.example.proyecto1.Dto.LoginResponseDto;
 import com.example.proyecto1.Dto.UsuarioDto;
+import com.example.proyecto1.Mapper.UsuarioMapper;
 import com.example.proyecto1.Model.Empresa;
 import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
@@ -27,25 +28,20 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
     public List<UsuarioDto> listar() {
-        return usuarioRepository.findAll()
-                .stream()
-                .map(this::toDto)
-                .toList();
+        return usuarioMapper.toDtoList(usuarioRepository.findAll());
     }
 
     public List<UsuarioDto> listarPorEmpresa(Long empresaId) {
-        return usuarioRepository.findAllByEmpresaId(empresaId)
-                .stream()
-                .map(this::toDto)
-                .toList();
+        return usuarioMapper.toDtoList(usuarioRepository.findAllByEmpresaId(empresaId));
     }
 
     public UsuarioDto obtenerPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-        return toDto(usuario);
+        return usuarioMapper.toDto(usuario);
     }
 
     public UsuarioDto obtenerPorIdYEmpresa(Long empresaId, Long id) {
@@ -54,7 +50,7 @@ public class UsuarioService {
                         HttpStatus.NOT_FOUND,
                         "Usuario no encontrado o no pertenece a esta empresa"
                 ));
-        return toDto(usuario);
+        return usuarioMapper.toDto(usuario);
     }
 
     public UsuarioDto crear(UsuarioDto dto) {
@@ -85,11 +81,8 @@ public class UsuarioService {
             );
         }
 
-        Usuario usuario = new Usuario();
+        Usuario usuario = usuarioMapper.toEntity(dto);
         usuario.setEmpresa(empresa);
-        usuario.setNombre(dto.getNombre());
-        usuario.setApellido(dto.getApellido());
-        usuario.setCorreo(dto.getCorreo());
         usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         usuario.setRol(dto.getRolUsuario() != null ? dto.getRolUsuario() : RolUsuario.LECTOR);
         usuario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
@@ -99,7 +92,7 @@ public class UsuarioService {
         usuario.setFecha_modificacion(ahora);
 
         Usuario guardado = usuarioRepository.save(usuario);
-        return toDto(guardado);
+        return usuarioMapper.toDto(guardado);
     }
 
     public LoginResponseDto login(LoginDto loginDto) {
@@ -133,17 +126,7 @@ public class UsuarioService {
         usuario.setUltimo_login(Timestamp.from(Instant.now()));
         usuarioRepository.save(usuario);
 
-        return LoginResponseDto.builder()
-                .id(usuario.getId())
-                .empresaId(usuario.getEmpresa().getId())
-                .nombreEmpresa(usuario.getEmpresa().getNombre())
-                .nombre(usuario.getNombre())
-                .apellido(usuario.getApellido())
-                .correo(usuario.getCorreo())
-                .rolUsuario(usuario.getRol())
-                .mensaje("Login exitoso")
-                .exitoso(true)
-                .build();
+        return usuarioMapper.toLoginResponseDto(usuario);
     }
 
     public UsuarioDto actualizar(Long id, UsuarioDto dto) {
@@ -158,26 +141,16 @@ public class UsuarioService {
             );
         }
 
-        existente.setNombre(dto.getNombre());
-        existente.setApellido(dto.getApellido());
-        existente.setCorreo(dto.getCorreo());
+        usuarioMapper.updateEntityFromDto(dto, existente);
 
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             existente.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        if (dto.getRolUsuario() != null) {
-            existente.setRol(dto.getRolUsuario());
-        }
-
-        if (dto.getActivo() != null) {
-            existente.setActivo(dto.getActivo());
-        }
-
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Usuario actualizado = usuarioRepository.save(existente);
-        return toDto(actualizado);
+        return usuarioMapper.toDto(actualizado);
     }
 
     public UsuarioDto actualizarPorEmpresa(Long empresaId, Long id, UsuarioDto dto) {
@@ -195,26 +168,16 @@ public class UsuarioService {
             );
         }
 
-        existente.setNombre(dto.getNombre());
-        existente.setApellido(dto.getApellido());
-        existente.setCorreo(dto.getCorreo());
+        usuarioMapper.updateEntityFromDto(dto, existente);
 
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             existente.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        if (dto.getRolUsuario() != null) {
-            existente.setRol(dto.getRolUsuario());
-        }
-
-        if (dto.getActivo() != null) {
-            existente.setActivo(dto.getActivo());
-        }
-
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Usuario actualizado = usuarioRepository.save(existente);
-        return toDto(actualizado);
+        return usuarioMapper.toDto(actualizado);
     }
 
     public void eliminar(Long id) {
@@ -244,21 +207,6 @@ public class UsuarioService {
         usuario.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Usuario actualizado = usuarioRepository.save(usuario);
-        return toDto(actualizado);
-    }
-
-    private UsuarioDto toDto(Usuario u) {
-        return UsuarioDto.builder()
-                .id(u.getId())
-                .empresaId(u.getEmpresa().getId())
-                .nombre(u.getNombre())
-                .apellido(u.getApellido())
-                .correo(u.getCorreo())
-                .rolUsuario(u.getRol())
-                .activo(u.getActivo())
-                .ultimo_login(u.getUltimo_login())
-                .fecha_registro(u.getFecha_registro())
-                .fecha_modificacion(u.getFecha_modificacion())
-                .build();
+        return usuarioMapper.toDto(actualizado);
     }
 }
