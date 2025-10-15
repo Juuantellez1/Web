@@ -30,7 +30,7 @@ public class ActividadDto {
 
     private Long rolResponsableId;
 
-    private String rolResponsableNombre; // Solo para lectura
+    private String rolResponsableNombre;
 
     private Boolean activo;
 

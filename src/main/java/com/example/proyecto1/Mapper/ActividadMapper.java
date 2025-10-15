@@ -18,7 +18,6 @@ public interface ActividadMapper {
     @Mapping(source = "rolResponsableId", target = "rolResponsable.id")
     @Mapping(target = "fecha_registro", ignore = true)
     @Mapping(target = "fecha_modificacion", ignore = true)
-    @Mapping(target = "rolResponsableNombre", ignore = true)
     Actividad toEntity(ActividadDto dto);
 
     List<ActividadDto> toDtoList(List<Actividad> actividades);
