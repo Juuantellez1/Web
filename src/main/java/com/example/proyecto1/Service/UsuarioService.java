@@ -4,7 +4,7 @@ import com.example.proyecto1.Dto.LoginDto;
 import com.example.proyecto1.Dto.LoginResponseDto;
 import com.example.proyecto1.Dto.UsuarioDto;
 import com.example.proyecto1.Model.Empresa;
-import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.EmpresaRepository;
 import com.example.proyecto1.Repository.UsuarioRepository;
@@ -91,7 +91,7 @@ public class UsuarioService {
         usuario.setApellido(dto.getApellido());
         usuario.setCorreo(dto.getCorreo());
         usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
-        usuario.setRol(dto.getRol() != null ? dto.getRol() : Rol.LECTOR);
+        usuario.setRol(dto.getRolUsuario() != null ? dto.getRolUsuario() : RolUsuario.LECTOR);
         usuario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
 
         Timestamp ahora = Timestamp.from(Instant.now());
@@ -140,7 +140,7 @@ public class UsuarioService {
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
                 .correo(usuario.getCorreo())
-                .rol(usuario.getRol())
+                .rolUsuario(usuario.getRol())
                 .mensaje("Login exitoso")
                 .exitoso(true)
                 .build();
@@ -166,8 +166,8 @@ public class UsuarioService {
             existente.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        if (dto.getRol() != null) {
-            existente.setRol(dto.getRol());
+        if (dto.getRolUsuario() != null) {
+            existente.setRol(dto.getRolUsuario());
         }
 
         if (dto.getActivo() != null) {
@@ -203,8 +203,8 @@ public class UsuarioService {
             existente.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        if (dto.getRol() != null) {
-            existente.setRol(dto.getRol());
+        if (dto.getRolUsuario() != null) {
+            existente.setRol(dto.getRolUsuario());
         }
 
         if (dto.getActivo() != null) {
@@ -233,14 +233,14 @@ public class UsuarioService {
         usuarioRepository.delete(usuario);
     }
 
-    public UsuarioDto cambiarRol(Long empresaId, Long id, Rol nuevoRol) {
+    public UsuarioDto cambiarRol(Long empresaId, Long id, RolUsuario nuevoRolUsuario) {
         Usuario usuario = usuarioRepository.findByEmpresaIdAndId(empresaId, id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Usuario no encontrado o no pertenece a esta empresa"
                 ));
 
-        usuario.setRol(nuevoRol);
+        usuario.setRol(nuevoRolUsuario);
         usuario.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Usuario actualizado = usuarioRepository.save(usuario);
@@ -254,7 +254,7 @@ public class UsuarioService {
                 .nombre(u.getNombre())
                 .apellido(u.getApellido())
                 .correo(u.getCorreo())
-                .rol(u.getRol())
+                .rolUsuario(u.getRol())
                 .activo(u.getActivo())
                 .ultimo_login(u.getUltimo_login())
                 .fecha_registro(u.getFecha_registro())

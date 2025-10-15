@@ -1,6 +1,6 @@
 package com.example.proyecto1.Dto;
 
-import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.RolUsuario;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -36,7 +36,7 @@ public class UsuarioDto {
     private String password; // No obligatorio en actualizaciones
 
     @NotNull(message = "El rol es obligatorio")
-    private Rol rol;
+    private RolUsuario rolUsuario;
 
     private Boolean activo;
 

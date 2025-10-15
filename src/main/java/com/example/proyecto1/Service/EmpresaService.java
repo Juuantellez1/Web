@@ -5,7 +5,7 @@ import com.example.proyecto1.Dto.CrearEmpresaResponseDto;
 import com.example.proyecto1.Dto.EmpresaDto;
 import com.example.proyecto1.Dto.UsuarioDto;
 import com.example.proyecto1.Model.Empresa;
-import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.EmpresaRepository;
 import com.example.proyecto1.Repository.UsuarioRepository;
@@ -65,7 +65,7 @@ public class EmpresaService {
         admin.setApellido(request.getApellidoAdmin());
         admin.setCorreo(request.getCorreoAdmin());
         admin.setPassword(passwordEncoder.encode(request.getPasswordAdmin()));
-        admin.setRol(Rol.ADMIN);
+        admin.setRol(RolUsuario.ADMIN);
         admin.setActivo(true);
         admin.setFecha_registro(ahora);
         admin.setFecha_modificacion(ahora);
@@ -132,7 +132,7 @@ public class EmpresaService {
                 .nombre(u.getNombre())
                 .apellido(u.getApellido())
                 .correo(u.getCorreo())
-                .rol(u.getRol())
+                .rolUsuario(u.getRol())
                 .activo(u.getActivo())
                 .ultimo_login(u.getUltimo_login())
                 .fecha_registro(u.getFecha_registro())

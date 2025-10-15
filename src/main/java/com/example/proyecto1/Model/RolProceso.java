@@ -1,40 +1,37 @@
+
 package com.example.proyecto1.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import lombok.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "empresas")
+@Table(name = "roles_proceso")
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Empresa {
+public class RolProceso {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nombre", nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
+    @Column(nullable = false)
     private String nombre;
 
-    @Column(name = "nit", nullable = false, unique = true, length = 30)
-    private String nit;
+    private String descripcion;
 
-    @Column(name = "correo", nullable = false, unique = true)
-    private String correo;
-
-    @Column(name = "activo", nullable = false)
+    @Column(nullable = false)
     private Boolean activo = true;
 
-    @Column(name = "fecha_registro", nullable = false)
+    @Column(nullable = false)
     private Timestamp fecha_registro;
 
-    @Column(name = "fecha_modificacion", nullable = false)
+    @Column(nullable = false)
     private Timestamp fecha_modificacion;
 
     @PrePersist

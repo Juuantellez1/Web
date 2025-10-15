@@ -1,7 +1,7 @@
 package com.example.proyecto1.Controller;
 
 import com.example.proyecto1.Dto.UsuarioDto;
-import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -78,7 +78,7 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDto> cambiarRol(
             @PathVariable Long empresaId,
             @PathVariable Long id,
-            @RequestParam Rol nuevoRol) {
-        return ResponseEntity.ok(usuarioService.cambiarRol(empresaId, id, nuevoRol));
+            @RequestParam RolUsuario nuevoRolUsuario) {
+        return ResponseEntity.ok(usuarioService.cambiarRol(empresaId, id, nuevoRolUsuario));
     }
 }

@@ -1,7 +1,7 @@
 
 package com.example.proyecto1.Dto;
 
-import com.example.proyecto1.Model.Rol;
+import com.example.proyecto1.Model.RolUsuario;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +18,7 @@ public class LoginResponseDto {
     private String nombre;
     private String apellido;
     private String correo;
-    private Rol rol;
+    private RolUsuario rolUsuario;
     private String mensaje;
     private boolean exitoso;
 }

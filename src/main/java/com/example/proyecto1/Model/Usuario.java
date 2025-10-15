@@ -40,7 +40,7 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
-    private Rol rol = Rol.LECTOR;
+    private RolUsuario rol = RolUsuario.LECTOR;
 
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
@@ -53,4 +53,15 @@ public class Usuario {
 
     @Column(name = "fecha_modificacion", nullable = false)
     private Timestamp fecha_modificacion;
+
+    @PrePersist
+    protected void onCreate() {
+        fecha_registro = new Timestamp(System.currentTimeMillis());
+        fecha_modificacion = new Timestamp(System.currentTimeMillis());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        fecha_modificacion = new Timestamp(System.currentTimeMillis());
+    }
 }

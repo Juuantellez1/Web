@@ -1,40 +1,44 @@
 package com.example.proyecto1.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import lombok.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "empresas")
+@Table(name = "actividades")
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Empresa {
+public class Actividad {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nombre", nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "proceso_id", nullable = false)
+    private Proceso proceso;
+
+    @Column(nullable = false)
     private String nombre;
 
-    @Column(name = "nit", nullable = false, unique = true, length = 30)
-    private String nit;
+    private String descripcion;
 
-    @Column(name = "correo", nullable = false, unique = true)
-    private String correo;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoActividad tipo;
 
-    @Column(name = "activo", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "rol_proceso_id")
+    private RolProceso rolResponsable;
+
+    @Column(nullable = false)
     private Boolean activo = true;
 
-    @Column(name = "fecha_registro", nullable = false)
+    @Column(nullable = false)
     private Timestamp fecha_registro;
 
-    @Column(name = "fecha_modificacion", nullable = false)
+    @Column(nullable = false)
     private Timestamp fecha_modificacion;
 
     @PrePersist
@@ -46,5 +50,11 @@ public class Empresa {
     @PreUpdate
     protected void onUpdate() {
         fecha_modificacion = new Timestamp(System.currentTimeMillis());
+    }
+
+    public enum TipoActividad {
+        USUARIO,
+        AUTOMATICA,
+        MANUAL
     }
 }
