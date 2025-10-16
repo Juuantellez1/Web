@@ -1,7 +1,10 @@
+
 package com.example.proyecto1.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "arcos")
@@ -36,6 +39,23 @@ public class Arco {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @Column(nullable = false)
+    private Timestamp fecha_registro;
+
+    @Column(nullable = false)
+    private Timestamp fecha_modificacion;
+
+    @PrePersist
+    protected void onCreate() {
+        fecha_registro = new Timestamp(System.currentTimeMillis());
+        fecha_modificacion = new Timestamp(System.currentTimeMillis());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        fecha_modificacion = new Timestamp(System.currentTimeMillis());
+    }
 
     public enum TipoNodo {
         ACTIVIDAD,
