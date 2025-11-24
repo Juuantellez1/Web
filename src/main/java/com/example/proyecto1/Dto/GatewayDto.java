@@ -35,4 +35,7 @@ public class GatewayDto {
 
     private Long cantidadArcosEntrantes;
     private Long cantidadArcosSalientes;
+
+    private Double x;
+    private Double y;
 }

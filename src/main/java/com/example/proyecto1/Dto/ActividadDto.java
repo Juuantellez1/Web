@@ -36,4 +36,7 @@ public class ActividadDto {
 
     private Timestamp fecha_registro;
     private Timestamp fecha_modificacion;
+
+    private Double x;
+    private Double y;
 }

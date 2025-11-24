@@ -9,7 +9,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        uses = {ActividadMapper.class})
+        uses = {ActividadMapper.class, ArcoMapper.class, GatewayMapper.class})
 public interface ProcesoMapper {
 
     @Mapping(source = "empresa.id", target = "empresaId")

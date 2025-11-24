@@ -54,4 +54,10 @@ public class Gateway {
         INCLUSIVO,
         PARALELO
     }
+
+    @Column(name = "pos_x")
+    private Double x;
+
+    @Column(name = "pos_y")
+    private Double y;
 }
