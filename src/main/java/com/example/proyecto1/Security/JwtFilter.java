@@ -24,10 +24,9 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
 
-        // Rutas que NO requieren validación de Token (deben coincidir con SecurityConfig)
         if (path.startsWith("/api/auth/login") ||
                 path.startsWith("/api/auth/register") ||
-                (path.startsWith("/api/empresas") && request.getMethod().equals("POST")) || // Registro empresa
+                (path.startsWith("/api/empresas") && request.getMethod().equals("POST")) ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs")) {
 
@@ -36,6 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         String authHeader = request.getHeader("Authorization");
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
@@ -44,7 +44,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 String role = jwtUtil.extractRole(token);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, java.util.Collections.singletonList(new SimpleGrantedAuthority(role))); // "ROLE_" + role si lo guardas sin prefijo
+                        email, null, java.util.Collections.singletonList(new SimpleGrantedAuthority(role)));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
