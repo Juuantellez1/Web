@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.example.proyecto1.Security.JwtUtil;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -29,6 +30,7 @@ public class UsuarioService {
     private final EmpresaRepository empresaRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final JwtUtil jwtUtil;
 
     public List<UsuarioDto> listar() {
         return usuarioMapper.toDtoList(usuarioRepository.findAll());
@@ -99,8 +101,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByCorreo(loginDto.getCorreo())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
-                        "Credenciales inválidas"
-                ));
+                        "Credenciales inválidas"));
 
         if (!usuario.getEmpresa().getActivo()) {
             throw new ResponseStatusException(
@@ -126,7 +127,12 @@ public class UsuarioService {
         usuario.setUltimo_login(Timestamp.from(Instant.now()));
         usuarioRepository.save(usuario);
 
-        return usuarioMapper.toLoginResponseDto(usuario);
+        String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol().name());
+
+        LoginResponseDto response = usuarioMapper.toLoginResponseDto(usuario);
+        response.setToken(token);
+
+        return response;
     }
 
     public UsuarioDto actualizar(Long id, UsuarioDto dto) {

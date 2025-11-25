@@ -21,4 +21,5 @@ public class LoginResponseDto {
     private RolUsuario rolUsuario;
     private String mensaje;
     private boolean exitoso;
+    private String token;
 }
