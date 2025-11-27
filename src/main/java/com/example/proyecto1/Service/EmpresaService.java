@@ -1,10 +1,8 @@
-
 package com.example.proyecto1.Service;
 
 import com.example.proyecto1.Dto.CrearEmpresaRequestDto;
 import com.example.proyecto1.Dto.CrearEmpresaResponseDto;
 import com.example.proyecto1.Dto.EmpresaDto;
-import com.example.proyecto1.Dto.UsuarioDto;
 import com.example.proyecto1.Mapper.EmpresaMapper;
 import com.example.proyecto1.Mapper.UsuarioMapper;
 import com.example.proyecto1.Model.Empresa;
@@ -12,10 +10,10 @@ import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.EmpresaRepository;
 import com.example.proyecto1.Repository.UsuarioRepository;
+import com.example.proyecto1.Security.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,7 +28,7 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
     private final EmpresaMapper empresaMapper;
     private final UsuarioMapper usuarioMapper;
 
@@ -69,7 +67,9 @@ public class EmpresaService {
         admin.setNombre(request.getNombreAdmin());
         admin.setApellido(request.getApellidoAdmin());
         admin.setCorreo(request.getCorreoAdmin());
-        admin.setPassword(passwordEncoder.encode(request.getPasswordAdmin()));
+
+        admin.setPassword(jwtUtil.hashSHA1(request.getPasswordAdmin()));
+
         admin.setRol(RolUsuario.ADMIN);
         admin.setActivo(true);
         admin.setFecha_registro(ahora);

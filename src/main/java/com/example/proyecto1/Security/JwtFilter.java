@@ -1,18 +1,19 @@
 package com.example.proyecto1.Security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -26,10 +27,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (path.startsWith("/api/auth/login") ||
                 path.startsWith("/api/auth/register") ||
-                (path.startsWith("/api/empresas") && request.getMethod().equals("POST")) ||
+                (path.equals("/api/empresas") && request.getMethod().equals("POST")) ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs")) {
-
             filterChain.doFilter(request, response);
             return;
         }
@@ -38,15 +38,24 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            try {
+                if (jwtUtil.validateToken(token)) {
+                    String userJson = jwtUtil.extractEmail(token);
+                    String role = jwtUtil.extractRole(token);
 
-            if (jwtUtil.validateToken(token)) {
-                String email = jwtUtil.extractEmail(token);
-                String role = jwtUtil.extractRole(token);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userJson, token, Collections.singletonList(new SimpleGrantedAuthority(role)));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, java.util.Collections.singletonList(new SimpleGrantedAuthority(role)));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    System.out.println("Token inválido o expirado para request: " + path);
+                }
+            } catch (Exception e) {
+                System.out.println("Excepción en JwtFilter: " + e.getMessage());
+            }
+        } else {
+            if(!request.getMethod().equals("OPTIONS")) {
+                System.out.println("Header Authorization faltante o incorrecto en: " + path);
             }
         }
 

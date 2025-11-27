@@ -1,5 +1,6 @@
 package com.example.proyecto1.Controller;
 
+import com.example.proyecto1.Dto.AuthorizedDTO;
 import com.example.proyecto1.Dto.LoginDto;
 import com.example.proyecto1.Dto.LoginResponseDto;
 import com.example.proyecto1.Service.UsuarioService;
@@ -18,7 +19,21 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginDto loginDto) {
-        LoginResponseDto response = usuarioService.login(loginDto);
+        AuthorizedDTO authorized = usuarioService.login(loginDto);
+
+        LoginResponseDto response = LoginResponseDto.builder()
+                .id(authorized.getUser().getId())
+                .empresaId(authorized.getUser().getEnterprise().getId())
+                .nombreEmpresa(authorized.getUser().getEnterprise().getNombre())
+                .nombre(authorized.getUser().getNombre())
+                .apellido(authorized.getUser().getApellido())
+                .correo(authorized.getUser().getCorreo())
+                .rolUsuario(authorized.getUser().getRolUsuario())
+                .token(authorized.getToken())
+                .mensaje("Login exitoso")
+                .exitoso(true)
+                .build();
+
         return ResponseEntity.ok(response);
     }
 }
