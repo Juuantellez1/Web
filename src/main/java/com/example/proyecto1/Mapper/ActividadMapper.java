@@ -15,7 +15,7 @@ public interface ActividadMapper {
     ActividadDto toDto(Actividad actividad);
 
     @Mapping(source = "procesoId", target = "proceso.id")
-    @Mapping(source = "rolResponsableId", target = "rolResponsable.id")
+    @Mapping(target = "rolResponsable", ignore = true)
     @Mapping(target = "fecha_registro", ignore = true)
     @Mapping(target = "fecha_modificacion", ignore = true)
     Actividad toEntity(ActividadDto dto);
@@ -27,6 +27,6 @@ public interface ActividadMapper {
     @Mapping(target = "proceso", ignore = true)
     @Mapping(target = "fecha_registro", ignore = true)
     @Mapping(target = "fecha_modificacion", ignore = true)
-    @Mapping(source = "rolResponsableId", target = "rolResponsable.id")
+    @Mapping(target = "rolResponsable", ignore = true)
     void updateEntityFromDto(ActividadDto dto, @MappingTarget Actividad actividad);
 }

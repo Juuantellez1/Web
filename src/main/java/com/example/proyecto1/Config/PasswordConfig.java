@@ -1,4 +1,4 @@
-package com.example.proyecto1.Config;
+/*package com.example.proyecto1.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,4 +11,4 @@ public class PasswordConfig {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-}
+}*/

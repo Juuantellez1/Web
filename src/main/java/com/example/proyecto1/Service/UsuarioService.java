@@ -1,21 +1,21 @@
 package com.example.proyecto1.Service;
 
-import com.example.proyecto1.Dto.LoginDto;
-import com.example.proyecto1.Dto.LoginResponseDto;
-import com.example.proyecto1.Dto.UsuarioDto;
+import com.example.proyecto1.Dto.*;
+import com.example.proyecto1.Mapper.EmpresaMapper;
 import com.example.proyecto1.Mapper.UsuarioMapper;
 import com.example.proyecto1.Model.Empresa;
 import com.example.proyecto1.Model.RolUsuario;
 import com.example.proyecto1.Model.Usuario;
 import com.example.proyecto1.Repository.EmpresaRepository;
 import com.example.proyecto1.Repository.UsuarioRepository;
+import com.example.proyecto1.Security.JwtUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.example.proyecto1.Security.JwtUtil;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -28,9 +28,10 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final EmpresaMapper empresaMapper;
     private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper;
 
     public List<UsuarioDto> listar() {
         return usuarioMapper.toDtoList(usuarioRepository.findAll());
@@ -85,7 +86,10 @@ public class UsuarioService {
 
         Usuario usuario = usuarioMapper.toEntity(dto);
         usuario.setEmpresa(empresa);
-        usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        String hashedPassword = jwtUtil.hashSHA1(dto.getPassword());
+        usuario.setPassword(hashedPassword);
+
         usuario.setRol(dto.getRolUsuario() != null ? dto.getRolUsuario() : RolUsuario.LECTOR);
         usuario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
 
@@ -97,42 +101,44 @@ public class UsuarioService {
         return usuarioMapper.toDto(guardado);
     }
 
-    public LoginResponseDto login(LoginDto loginDto) {
+    public AuthorizedDTO login(LoginDto loginDto) {
+        String passwordHash = jwtUtil.hashSHA1(loginDto.getPassword());
+
         Usuario usuario = usuarioRepository.findByCorreo(loginDto.getCorreo())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "Credenciales inválidas"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no existe"));
+
+        System.out.println("================ DEBUG LOGIN ================");
+        System.out.println("Correo: " + loginDto.getCorreo());
+        System.out.println("Pass Ingresada (Sin Hash): " + loginDto.getPassword());
+        System.out.println("Pass Ingresada (Hash SHA1): " + passwordHash);
+        System.out.println("Pass en Base de Datos:      " + usuario.getPassword());
+        System.out.println("¿Coinciden?: " + passwordHash.equals(usuario.getPassword()));
+        System.out.println("=============================================");
+
+        if (!passwordHash.equals(usuario.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales inválidas");
+        }
 
         if (!usuario.getEmpresa().getActivo()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "La empresa está inactiva"
-            );
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La empresa está inactiva");
         }
-
         if (!usuario.getActivo()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Usuario inactivo"
-            );
-        }
-
-        if (!passwordEncoder.matches(loginDto.getPassword(), usuario.getPassword())) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Credenciales inválidas"
-            );
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario inactivo");
         }
 
         usuario.setUltimo_login(Timestamp.from(Instant.now()));
         usuarioRepository.save(usuario);
 
-        String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol().name());
+        UserExtendDTO userExtendDTO = convertirAUserExtendDTO(usuario);
 
-        LoginResponseDto response = usuarioMapper.toLoginResponseDto(usuario);
-        response.setToken(token);
+        try {
+            String userJson = objectMapper.writeValueAsString(userExtendDTO);
+            String token = jwtUtil.generateToken(userJson, usuario.getRol().name());
 
-        return response;
+            return new AuthorizedDTO(userExtendDTO, token, "Bearer");
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al generar token");
+        }
     }
 
     public UsuarioDto actualizar(Long id, UsuarioDto dto) {
@@ -141,16 +147,13 @@ public class UsuarioService {
 
         if (dto.getCorreo() != null && !dto.getCorreo().equalsIgnoreCase(existente.getCorreo())
                 && usuarioRepository.existsByEmpresaIdAndCorreo(existente.getEmpresa().getId(), dto.getCorreo())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "El correo ya está registrado en esta empresa"
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya está registrado en esta empresa");
         }
 
         usuarioMapper.updateEntityFromDto(dto, existente);
 
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            existente.setPassword(passwordEncoder.encode(dto.getPassword()));
+            existente.setPassword(jwtUtil.hashSHA1(dto.getPassword()));
         }
 
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
@@ -161,23 +164,17 @@ public class UsuarioService {
 
     public UsuarioDto actualizarPorEmpresa(Long empresaId, Long id, UsuarioDto dto) {
         Usuario existente = usuarioRepository.findByEmpresaIdAndId(empresaId, id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Usuario no encontrado o no pertenece a esta empresa"
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no pertenece a esta empresa"));
 
         if (dto.getCorreo() != null && !dto.getCorreo().equalsIgnoreCase(existente.getCorreo())
                 && usuarioRepository.existsByEmpresaIdAndCorreo(empresaId, dto.getCorreo())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "El correo ya está registrado en esta empresa"
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya está registrado en esta empresa");
         }
 
         usuarioMapper.updateEntityFromDto(dto, existente);
 
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            existente.setPassword(passwordEncoder.encode(dto.getPassword()));
+            existente.setPassword(jwtUtil.hashSHA1(dto.getPassword()));
         }
 
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
@@ -195,24 +192,35 @@ public class UsuarioService {
 
     public void eliminarPorEmpresa(Long empresaId, Long id) {
         Usuario usuario = usuarioRepository.findByEmpresaIdAndId(empresaId, id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Usuario no encontrado o no pertenece a esta empresa"
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no pertenece a esta empresa"));
         usuarioRepository.delete(usuario);
     }
 
     public UsuarioDto cambiarRol(Long empresaId, Long id, RolUsuario nuevoRolUsuario) {
         Usuario usuario = usuarioRepository.findByEmpresaIdAndId(empresaId, id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Usuario no encontrado o no pertenece a esta empresa"
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no pertenece a esta empresa"));
 
         usuario.setRol(nuevoRolUsuario);
         usuario.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Usuario actualizado = usuarioRepository.save(usuario);
         return usuarioMapper.toDto(actualizado);
+    }
+
+    private UserExtendDTO convertirAUserExtendDTO(Usuario usuario) {
+        UsuarioDto base = usuarioMapper.toDto(usuario);
+        UserExtendDTO extend = new UserExtendDTO();
+        extend.setId(base.getId());
+        extend.setEmpresaId(base.getEmpresaId());
+        extend.setNombre(base.getNombre());
+        extend.setApellido(base.getApellido());
+        extend.setCorreo(base.getCorreo());
+        extend.setRolUsuario(base.getRolUsuario());
+        extend.setActivo(base.getActivo());
+        extend.setUltimo_login(base.getUltimo_login());
+        extend.setFecha_registro(base.getFecha_registro());
+        extend.setFecha_modificacion(base.getFecha_modificacion());
+        extend.setEnterprise(empresaMapper.toDto(usuario.getEmpresa()));
+        return extend;
     }
 }

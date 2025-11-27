@@ -143,7 +143,9 @@ public class ActividadService {
         }
 
         String nombreAnterior = existente.getNombre();
+
         actividadMapper.updateEntityFromDto(dto, existente);
+
         existente.setFecha_modificacion(Timestamp.from(Instant.now()));
 
         Actividad actualizada = actividadRepository.save(existente);
